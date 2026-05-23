@@ -22,7 +22,7 @@
         <div><span class="label">Restore Britain %</span><input type="number" id="prior-rb" min="0" max="100" value="10" style="width:100%"></div>
       </div>
       <div id="prior-sum-note" class="note" style="margin-top:10px;"></div>
-      <button onclick="startApp()" style="margin-top:1rem;">Start forecasting</button>
+      <button id="start-btn" style="margin-top:1rem;">Start forecasting</button>
     </div>
   </div>
 
@@ -58,19 +58,17 @@
       <div style="margin-bottom:1rem;">
         <span class="label">What kind of day is it?</span>
         <div>
-          <span class="tag" onclick="selectDay(0.9)">Quiet — nothing happened</span>
-          <span class="tag" onclick="selectDay(0.7)">Market drift — prices moved, no news</span>
-          <span class="tag" onclick="selectDay(0.45)">News day — poll or campaign event</span>
-          <span class="tag" onclick="selectDay(0.2)">Major news — big surprise</span>
+          <span class="tag" data-alpha="0.9">Quiet — nothing happened</span>
+          <span class="tag" data-alpha="0.7">Market drift — prices moved, no news</span>
+          <span class="tag" data-alpha="0.45">News day — poll or campaign event</span>
+          <span class="tag" data-alpha="0.2">Major news — big surprise</span>
         </div>
       </div>
 
       <div>
         <span class="label">&alpha; (prior weight) — suggested from day type, edit freely</span>
         <div class="alpha-row">
-          <input type="range" min="0" max="1" step="0.05" value="0.7" id="alpha-slider"
-            oninput="document.getElementById('alpha-val').textContent=parseFloat(this.value).toFixed(2)"
-            style="flex:1;">
+          <input type="range" min="0" max="1" step="0.05" value="0.7" id="alpha-slider" style="flex:1;">
           <span style="font-size:16px;font-weight:500;min-width:36px;" id="alpha-val">0.70</span>
         </div>
         <p class="note">High &alpha; = trust your prior more. Low &alpha; = trust today's market more.</p>
@@ -81,7 +79,7 @@
         <textarea id="reasoning" placeholder="e.g. New Survation poll out today showing Labour +8. Markets likely to reflect this. Setting alpha low."></textarea>
       </div>
 
-      <button onclick="goStep2()" style="margin-top:0.75rem;">
+      <button id="btn-step2" style="margin-top:0.75rem;">
         Confirm &alpha; and reasoning — now look at markets &rarr;
       </button>
     </div>
@@ -113,7 +111,7 @@
         </div>
       </div>
 
-      <button onclick="computeUpdate()" style="margin-top:1rem;">Compute update</button>
+      <button id="btn-compute" style="margin-top:1rem;">Compute update</button>
     </div>
 
     <!-- Step 3: review + confirm -->
@@ -123,7 +121,10 @@
         <div class="step-title">Today's update</div>
       </div>
       <div id="update-results"></div>
-      <button onclick="confirmUpdate()" style="margin-top:1rem;">Confirm and log &#10003;</button>
+      <div style="display:flex;gap:0.75rem;margin-top:1rem;">
+        <button id="btn-confirm">Confirm and log &#10003;</button>
+        <button id="btn-reset" class="btn-secondary">Start over &times;</button>
+      </div>
     </div>
 
     <!-- Chart -->
@@ -149,6 +150,6 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
