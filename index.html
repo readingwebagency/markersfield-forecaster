@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makerfield by-election forecaster</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Setup screen -->
+  <div id="setup-screen">
+    <div class="step">
+      <div class="step-header">
+        <div class="step-num">&#9873;</div>
+        <div class="step-title">Set starting prior</div>
+      </div>
+      <p class="note" style="margin-bottom:1rem;">Enter your initial probability estimates before looking at any markets. These must sum to 100%.</p>
+      <div class="row3">
+        <div><span class="label">Labour %</span><input type="number" id="prior-l" min="0" max="100" value="60" style="width:100%"></div>
+        <div><span class="label">Reform %</span><input type="number" id="prior-r" min="0" max="100" value="30" style="width:100%"></div>
+        <div><span class="label">Restore Britain %</span><input type="number" id="prior-rb" min="0" max="100" value="10" style="width:100%"></div>
+      </div>
+      <div id="prior-sum-note" class="note" style="margin-top:10px;"></div>
+      <button onclick="startApp()" style="margin-top:1rem;">Start forecasting</button>
+    </div>
+  </div>
+
+  <!-- Main screen -->
+  <div id="main-screen" class="hidden">
+
+    <!-- Summary cards -->
+    <div id="summary-cards" class="row3">
+      <div class="metric">
+        <div class="metric-label">Labour</div>
+        <div class="metric-val" id="cur-l">—</div>
+        <div class="result-bar" style="background:#185FA5;" id="bar-l"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Reform</div>
+        <div class="metric-val" id="cur-r">—</div>
+        <div class="result-bar" style="background:#A32D2D;" id="bar-r"></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Restore Britain</div>
+        <div class="metric-val" id="cur-rb">—</div>
+        <div class="result-bar" style="background:#854F0B;" id="bar-rb"></div>
+      </div>
+    </div>
+
+    <!-- Step 1: classify + set alpha -->
+    <div class="step" id="step1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-title">Classify today — set &alpha; before looking at markets</div>
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <span class="label">What kind of day is it?</span>
+        <div>
+          <span class="tag" onclick="selectDay(0.9)">Quiet — nothing happened</span>
+          <span class="tag" onclick="selectDay(0.7)">Market drift — prices moved, no news</span>
+          <span class="tag" onclick="selectDay(0.45)">News day — poll or campaign event</span>
+          <span class="tag" onclick="selectDay(0.2)">Major news — big surprise</span>
+        </div>
+      </div>
+
+      <div>
+        <span class="label">&alpha; (prior weight) — suggested from day type, edit freely</span>
+        <div class="alpha-row">
+          <input type="range" min="0" max="1" step="0.05" value="0.7" id="alpha-slider"
+            oninput="document.getElementById('alpha-val').textContent=parseFloat(this.value).toFixed(2)"
+            style="flex:1;">
+          <span style="font-size:16px;font-weight:500;min-width:36px;" id="alpha-val">0.70</span>
+        </div>
+        <p class="note">High &alpha; = trust your prior more. Low &alpha; = trust today's market more.</p>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <span class="label">Your reasoning (locked after you proceed)</span>
+        <textarea id="reasoning" placeholder="e.g. New Survation poll out today showing Labour +8. Markets likely to reflect this. Setting alpha low."></textarea>
+      </div>
+
+      <button onclick="goStep2()" style="margin-top:0.75rem;">
+        Confirm &alpha; and reasoning — now look at markets &rarr;
+      </button>
+    </div>
+
+    <!-- Step 2: enter market prices -->
+    <div class="step disabled" id="step2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-title">Enter today's market prices</div>
+      </div>
+
+      <div style="margin-bottom:1.25rem;">
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;color:#5f5e5a;">Kalshi (prediction market — enter % directly)</div>
+        <p class="note" style="margin-bottom:10px;">Enter implied win probability as a percentage.</p>
+        <div class="row3">
+          <div><span class="label">Labour %</span><input type="number" id="k-l" min="0" max="100" placeholder="e.g. 72" style="width:100%"></div>
+          <div><span class="label">Reform %</span><input type="number" id="k-r" min="0" max="100" placeholder="e.g. 20" style="width:100%"></div>
+          <div><span class="label">Restore Britain %</span><input type="number" id="k-rb" min="0" max="100" placeholder="e.g. 8" style="width:100%"></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;font-weight:500;margin-bottom:4px;color:#5f5e5a;">Betfair (exchange — enter decimal odds)</div>
+        <p class="note" style="margin-bottom:10px;">Enter the back odds shown on the exchange, e.g. 1.40 for Labour, 5.0 for Reform. Margin is stripped automatically.</p>
+        <div class="row3">
+          <div><span class="label">Labour odds</span><input type="number" id="b-l" min="1.01" step="0.01" placeholder="e.g. 1.40" style="width:100%"></div>
+          <div><span class="label">Reform odds</span><input type="number" id="b-r" min="1.01" step="0.01" placeholder="e.g. 5.00" style="width:100%"></div>
+          <div><span class="label">Restore Britain odds</span><input type="number" id="b-rb" min="1.01" step="0.01" placeholder="e.g. 14.0" style="width:100%"></div>
+        </div>
+      </div>
+
+      <button onclick="computeUpdate()" style="margin-top:1rem;">Compute update</button>
+    </div>
+
+    <!-- Step 3: review + confirm -->
+    <div class="step disabled" id="step3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-title">Today's update</div>
+      </div>
+      <div id="update-results"></div>
+      <button onclick="confirmUpdate()" style="margin-top:1rem;">Confirm and log &#10003;</button>
+    </div>
+
+    <!-- Chart -->
+    <div class="section-title">Prediction history</div>
+    <div class="panel">
+      <canvas id="chart" height="180"></canvas>
+    </div>
+
+    <!-- Log -->
+    <div class="section-title">Log</div>
+    <div class="panel">
+      <div class="log-row log-head">
+        <span>Date</span>
+        <span>&alpha;</span>
+        <span>Reasoning</span>
+        <span style="text-align:right">Labour</span>
+        <span style="text-align:right">Reform</span>
+        <span style="text-align:right">Restore</span>
+      </div>
+      <div id="log-body"></div>
+    </div>
+
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
